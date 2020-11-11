@@ -1,4 +1,4 @@
-## Comparison performance between CNN architectures to classify galaxies by morphology
+## git branch -M main
 
 [![License](http://img.shields.io/:license-mit-blue.svg?style=flat-square)](http://badges.mit-license.org) 
 
@@ -25,7 +25,7 @@ pip install --upgrade numpy
 First clone the repository 
 
 ```
-git clone 
+git clone https://github.com/madscientistCS/Comparison-performance-between-CNN-architectures-to-classify-galaxies-by-morphology.git
 ```
 
 run train 
@@ -41,6 +41,7 @@ Please make sure to update tests as appropriate.
 
 ## License
 [License MIT](https://choosealicense.com/licenses/mit/)
+
 ## Show some ❤️ by starring this repository ⭐️!
 <a href="#top">Back to top</a>
 </div>
