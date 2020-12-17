@@ -1,4 +1,4 @@
-## git branch -M main
+## Comparison performance between CNN architectures to classify galaxies by morphology 
 
 [![License](http://img.shields.io/:license-mit-blue.svg?style=flat-square)](http://badges.mit-license.org) 
 
@@ -18,6 +18,7 @@ What things you need to install the software and how to install them
 ```
 pip install --upgrade tensorflow
 pip install --upgrade numpy
+pip install -U scikit-learn
 ```
 
 ## Installation
