@@ -31,10 +31,10 @@ git clone https://github.com/madscientistCS/Comparison-performance-between-CNN-a
 
 run train 
 ```
-
-```
 python augmentation.py
 python galaxies_allmodels.py
+```
+
 
 ## Contributing
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
