@@ -14,18 +14,6 @@ plt.style.use('seaborn')
 
 COMPETITION_NAME = "galaxy-zoo-the-galaxy-challenge"
 DATA_PATH = "./data/"
-
-# For the classification of galaxies, the dataset provided by the galaxy challenge comes with 37 classes.
-#
-# To reduce the number of classes, we filter the classes we want and copy each class evenly
-# your proper folder. We will only use images with response rates greater than 90%.
-# - completely-rounded: Class7.1
-# - in-between: 7.2
-# - cigar-shaped: Class7.3
-# - on-edge: Class2.1
-# - spiral-barred: Class3.1 && Class4.1
-# - spiral: Class3.2 && Class4.1
-
 #%% Loading csv and adjusting the dataframe
 original_training_data = pd.read_csv(DATA_PATH + "training_solutions_rev1.csv")
 
@@ -77,9 +65,6 @@ in_between_df = in_between_df[bigger_than_completely_round & bigger_than_cigar_s
 in_between_df = in_between_df[["type", "in_between"]]
 #plot_distribution(in_between_df, "in_between")
 #######################
-
-
-# filters
 
 
 #plot_distribution(cigar_shaped_df, "cigar_shaped")
