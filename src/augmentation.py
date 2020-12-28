@@ -37,7 +37,6 @@ columns_mapper = {
     "GalaxyID": "GalaxyID",
     "Class7.1": "completely_round",
     "Class7.2": "in_between",
-    "Class7.3": "cigar_shaped",
     "Class2.1": "on_edge",
     "Class4.1": "has_signs_of_spiral",
     "Class3.1": "spiral_barred",
@@ -58,36 +57,26 @@ def plot_distribution(df, column):
     plt.show()
 
 
-completely_round_df = galaxies_df.sort_values(by="completely_round", ascending=False)[0:7000]
+completely_round_df = galaxies_df.sort_values(by="completely_round", ascending=False)[0:5000]
 completely_round_df["type"] = "completely_round"
 completely_round_df = completely_round_df[["type", "completely_round"]]
 
 #plot_distribution(completely_round_df, "completely_round")
 ########################
-in_between_df = galaxies_df.sort_values(by="in_between", ascending=False)[0:6000]
+in_between_df = galaxies_df.sort_values(by="in_between", ascending=False)[0:5000]
 in_between_df["type"] = "in_between"
 
 # filters
 bigger_than_completely_round = (
     in_between_df["in_between"] > in_between_df["completely_round"]
 )
-bigger_than_cigar_shaped = in_between_df["in_between"] > in_between_df["cigar_shaped"]
 
-in_between_df = in_between_df[bigger_than_completely_round & bigger_than_cigar_shaped]
+
+in_between_df = in_between_df[bigger_than_completely_round]
 in_between_df = in_between_df[["type", "in_between"]]
 #plot_distribution(in_between_df, "in_between")
 #######################
-cigar_shaped_df = galaxies_df.sort_values(by="cigar_shaped", ascending=False)[0:1550]
-cigar_shaped_df["type"] = "cigar_shaped"
 
-# filters
-bigger_than_in_between = cigar_shaped_df["cigar_shaped"] > cigar_shaped_df["in_between"]
-bigger_than_on_edge = cigar_shaped_df["cigar_shaped"] > cigar_shaped_df["on_edge"]
-
-cigar_shaped_df = cigar_shaped_df[bigger_than_in_between & bigger_than_on_edge]
-cigar_shaped_df = cigar_shaped_df[["type", "cigar_shaped"]]
-
-#plot_distribution(cigar_shaped_df, "cigar_shaped")
 
 on_edge_df = galaxies_df.sort_values(by="on_edge", ascending=False)[0:5000]
 on_edge_df["type"] = "on_edge"
@@ -106,7 +95,7 @@ spiral_barred_df = spiral_barred_df[["type", "spiral_barred"]]
 ###########################
 spiral_df = galaxies_df.sort_values(
     by=["spiral", "has_signs_of_spiral"], ascending=False
-)[0:8000]
+)[0:5000]
 spiral_df["type"] = "spiral"
 spiral_df = spiral_df[["type", "spiral"]]
 #plot_distribution(spiral_df, "spiral")
@@ -115,7 +104,6 @@ spiral_df = spiral_df[["type", "spiral"]]
 dfs = [
     completely_round_df,
     in_between_df,
-    cigar_shaped_df,
     on_edge_df,
     spiral_barred_df,
     spiral_df,
@@ -144,18 +132,17 @@ def plot_info_set(df, name):
     plt.show()
 
 
-#plot_info_set(train_df, "Train dataset")
-#plot_info_set(validation_df, "Test dataset")
+plot_info_set(train_df, "Train dataset")
+plot_info_set(validation_df, "Test dataset")
 
 
 ZOOM_FACTOR=1.6
-DIMEN=70
+DIMEN=224
 FILTERED_DATA_PATH = "/data/filtered/"
 DATASETS_PATH = "/data/sets/"
 #DATASETS_PATH = "/data/filtered/"
 
-import tensorflow as tf
-from tensorflow.python.client import device_lib
+
 #print(device_lib.list_local_devices())
 
 def copy_files_of_set(df, dataset):
@@ -174,8 +161,8 @@ def copy_files_of_set(df, dataset):
 
         copy(source_img, dest_path)
 
-copy_files_of_set(train_df, "training")
-copy_files_of_set(validation_df, "validation")
+#copy_files_of_set(train_df, "training")
+#copy_files_of_set(validation_df, "validation")
 
 
 def resize_and_zoom(dataset):
@@ -195,7 +182,7 @@ def augment_set(n, dataset = ""):
     p.resize(probability=1, width=DIMEN, height=DIMEN)
     p.sample(n)
 
-resize_and_zoom("training")
-resize_and_zoom("validation")
-augment_set(n = 2000)
+##resize_and_zoom("training")
+##resize_and_zoom("validation")
+##augment_set(n = 2000)
 

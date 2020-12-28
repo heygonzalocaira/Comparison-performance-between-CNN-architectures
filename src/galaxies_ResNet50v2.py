@@ -173,7 +173,7 @@ IMAGE_SIZE = (DIMEN, DIMEN)
 INPUT_SHAPE = (DIMEN, DIMEN, 3)
 IMG_SHAPE = (DIMEN, DIMEN, 3)
 
-BATCH_SIZE = 54
+BATCH_SIZE = 64
 TRAIN_DIR = DATASETS_PATH + "training"
 VALIDATION_DIR = DATASETS_PATH + "validation"
 
@@ -220,7 +220,7 @@ model_checkpoint = ModelCheckpoint(
 )
 t1_fit = time.time()
 fit_result = model.fit(train_generator,
-                    epochs=20, 
+                    epochs=10, 
                     steps_per_epoch=trains_steps,
                     #validation_steps=validation_steps,
                     validation_data=validation_generator,

@@ -77,15 +77,10 @@ in_between_df = in_between_df[bigger_than_completely_round & bigger_than_cigar_s
 in_between_df = in_between_df[["type", "in_between"]]
 #plot_distribution(in_between_df, "in_between")
 #######################
-cigar_shaped_df = galaxies_df.sort_values(by="cigar_shaped", ascending=False)[0:1550]
-cigar_shaped_df["type"] = "cigar_shaped"
+
 
 # filters
-bigger_than_in_between = cigar_shaped_df["cigar_shaped"] > cigar_shaped_df["in_between"]
-bigger_than_on_edge = cigar_shaped_df["cigar_shaped"] > cigar_shaped_df["on_edge"]
 
-cigar_shaped_df = cigar_shaped_df[bigger_than_in_between & bigger_than_on_edge]
-cigar_shaped_df = cigar_shaped_df[["type", "cigar_shaped"]]
 
 #plot_distribution(cigar_shaped_df, "cigar_shaped")
 
@@ -106,7 +101,7 @@ spiral_barred_df = spiral_barred_df[["type", "spiral_barred"]]
 ###########################
 spiral_df = galaxies_df.sort_values(
     by=["spiral", "has_signs_of_spiral"], ascending=False
-)[0:8000]
+)[0:7000]
 spiral_df["type"] = "spiral"
 spiral_df = spiral_df[["type", "spiral"]]
 #plot_distribution(spiral_df, "spiral")
@@ -115,7 +110,6 @@ spiral_df = spiral_df[["type", "spiral"]]
 dfs = [
     completely_round_df,
     in_between_df,
-    cigar_shaped_df,
     on_edge_df,
     spiral_barred_df,
     spiral_df,
@@ -144,15 +138,15 @@ def plot_info_set(df, name):
     plt.show()
 
 
-#plot_info_set(train_df, "Train dataset")
-#plot_info_set(validation_df, "Test dataset")
+plot_info_set(train_df, "Train dataset")
+plot_info_set(validation_df, "Test dataset")
 
 
 ZOOM_FACTOR=1.6
-DIMEN=70
+DIMEN=224
 FILTERED_DATA_PATH = "/data/filtered/"
-DATASETS_PATH = "/data/sets/"
-#DATASETS_PATH = "/data/filtered/"
+#DATASETS_PATH = "/data/sets/"
+DATASETS_PATH = "/data/filtered/"
 
 import tensorflow as tf
 from tensorflow.python.client import device_lib
@@ -216,7 +210,8 @@ IMAGE_SIZE = (DIMEN, DIMEN)
 INPUT_SHAPE = (DIMEN, DIMEN, 3)
 IMG_SHAPE = (DIMEN, DIMEN, 3)
 
-BATCH_SIZE = 64
+BATCH_SIZE = 32
+n_epochs= 50
 TRAIN_DIR = DATASETS_PATH + "training"
 VALIDATION_DIR = DATASETS_PATH + "validation"
 
@@ -256,12 +251,12 @@ trains_steps = train_generator.n // train_generator.batch_size
 validation_steps = validation_generator.n // validation_generator.batch_size
 
 model_checkpoint = ModelCheckpoint(
-    "/weightsvgg/weightsvgg{epoch:08d}.h5", save_weights_only=True, save_freq=5
+    "/weightsvgg/weightsvgg{epoch:08d}.h5", save_weights_only=True, save_freq=10
 )
 
 t1_fit = time.time()
 fit_result = model.fit(train_generator,
-                    epochs=10, 
+                    epochs=n_epochs, 
                     steps_per_epoch=trains_steps,
                     validation_steps=validation_steps,
                     validation_data=validation_generator,
@@ -273,25 +268,6 @@ model.save_weights("/weights/final_epochvgg.h5")
 
 #%%
 # Accuracy
-
-plt.plot(fit_result.history["accuracy"])
-plt.plot(fit_result.history["val_accuracy"])
-plt.title("Model accuracy")
-plt.ylabel("Accuracy")
-plt.xlabel("Epoch")
-plt.legend(["Train", "Test"], loc="upper left")
-plt.show()
-plt.savefig('acc_vggfull.png')
-
-# Loss
-plt.plot(fit_result.history["loss"])
-plt.plot(fit_result.history["val_loss"])
-plt.title("Model loss")
-plt.ylabel("Loss")
-plt.xlabel("Epoch")
-plt.legend(["Train", "Test"], loc="upper left")
-plt.show()
-plt.savefig('loss_vggfull.png')
 
 
 plt.plot(fit_result.history["accuracy"])
@@ -326,3 +302,195 @@ print(classification_report(prediction_generator.classes, y_predicts, target_nam
 sns.heatmap(confusion_matrix(prediction_generator.classes, y_predicts), xticklabels=classes_labels, yticklabels=classes_labels, annot=True,fmt='.5g')
 #plt.show()
 plt.savefig('confusion_matrix_vggfull.png')
+
+
+####################################
+###################################3
+ResNet50V2_MODEL=tf.keras.applications.ResNet50V2(input_shape=IMG_SHAPE,
+                                               include_top=False,
+                                               weights='imagenet')
+
+ResNet50V2_MODEL.trainable=False
+global_average_layer = tf.keras.layers.GlobalAveragePooling2D()
+prediction_layer = tf.keras.layers.Dense(len(dfs),activation='softmax')
+
+model = tf.keras.Sequential([
+  ResNet50V2_MODEL,
+  global_average_layer,
+  prediction_layer
+])
+
+model.compile(optimizer=tf.optimizers.Adam(), 
+              loss=tf.keras.losses.sparse_categorical_crossentropy,
+              metrics=["accuracy"])
+
+datagen = ImageDataGenerator()
+
+train_generator = datagen.flow_from_directory(
+    TRAIN_DIR, class_mode="sparse", target_size=IMAGE_SIZE, batch_size=BATCH_SIZE
+)
+print(len(train_generator.filepaths))
+validation_generator = datagen.flow_from_directory(
+    VALIDATION_DIR, class_mode="sparse", target_size=IMAGE_SIZE, batch_size=BATCH_SIZE
+)
+print(len(validation_generator.filepaths))
+
+if path.isdir("/weights") is False:
+    mkdir("/weights")
+
+trains_steps = train_generator.n // train_generator.batch_size
+validation_steps = validation_generator.n // validation_generator.batch_size
+print(trains_steps)
+print(validation_steps)
+
+
+model_checkpoint = ModelCheckpoint(
+    "/weights/weightsI{epoch:08d}.h5", save_weights_only=True, save_freq=10
+)
+t1_fit = time.time()
+fit_result = model.fit(train_generator,
+                    epochs=n_epochs, 
+                    steps_per_epoch=trains_steps,
+                    #validation_steps=validation_steps,
+                    validation_data=validation_generator,
+                    callbacks=[model_checkpoint],
+                    )
+t2_fit = time.time()
+print( 'Fit Time taken was {} seconds'.format( t2_fit - t1_fit))
+model.save_weights("/weights/final_epochI.h5")
+
+#%%
+# Accuracy
+
+
+plt.plot(fit_result.history["accuracy"])
+plt.plot(fit_result.history["val_accuracy"])
+plt.plot(fit_result.history["loss"])
+plt.plot(fit_result.history["val_loss"])
+plt.title("Model accuracy/Loss")
+plt.ylabel("Accuracy/Loss")
+plt.xlabel("Epoch")
+plt.legend(["Traina accuracy", "Test accuracy","Traina loss", "Test accuracy",], loc="upper left")
+plt.savefig('acc_loss_resFull.png')
+"""
+**Predict**
+"""
+
+from sklearn.metrics import classification_report, confusion_matrix
+import numpy as np
+import seaborn as sns
+
+print("prediction_generator")
+prediction_generator = datagen.flow_from_directory(
+    VALIDATION_DIR, class_mode="sparse", target_size=IMAGE_SIZE, batch_size=1, shuffle=False,
+)
+print("predict")
+t1 = time.time()
+predict_result = model.predict(prediction_generator, prediction_generator.n)
+t2 = time.time()
+print( 'PredictTime taken was {} seconds'.format( t2 - t1))
+y_predicts = np.argmax(predict_result, axis=1)
+print("classes_labels")
+classes_labels = list(prediction_generator.class_indices.keys())
+print("classification_report")
+print(classification_report(prediction_generator.classes, y_predicts, target_names=classes_labels))
+
+sns.heatmap(confusion_matrix(prediction_generator.classes, y_predicts), xticklabels=classes_labels, yticklabels=classes_labels, annot=True,fmt='.5g')
+#plt.show()
+plt.savefig('confusion_matrix_resFinal.png')
+
+
+####################################
+####################################
+MobilNetv2_MODEL=tf.keras.applications.MobileNetV2(input_shape=IMG_SHAPE,
+                                               include_top=False,
+                                               weights='imagenet')
+
+MobilNetv2_MODEL.trainable=False
+global_average_layer = tf.keras.layers.GlobalAveragePooling2D()
+prediction_layer = tf.keras.layers.Dense(len(dfs),activation='softmax')
+
+model = tf.keras.Sequential([
+  MobilNetv2_MODEL,
+  global_average_layer,
+  prediction_layer
+])
+
+model.compile(optimizer=tf.optimizers.Adam(), 
+              loss=tf.keras.losses.sparse_categorical_crossentropy,
+              metrics=["accuracy"])
+
+datagen = ImageDataGenerator()
+
+train_generator = datagen.flow_from_directory(
+    TRAIN_DIR, class_mode="sparse", target_size=IMAGE_SIZE, batch_size=BATCH_SIZE
+)
+print(len(train_generator.filepaths))
+validation_generator = datagen.flow_from_directory(
+    VALIDATION_DIR, class_mode="sparse", target_size=IMAGE_SIZE, batch_size=BATCH_SIZE
+)
+print(len(validation_generator.filepaths))
+
+if path.isdir("/weights") is False:
+    mkdir("/weights")
+
+trains_steps = train_generator.n // train_generator.batch_size
+validation_steps = validation_generator.n // validation_generator.batch_size
+print(trains_steps)
+print(validation_steps)
+
+
+model_checkpoint = ModelCheckpoint(
+    "/weights/weightsM{epoch:08d}.h5", save_weights_only=True, save_freq=10
+)
+t1_fit = time.time()
+fit_result = model.fit(train_generator,
+                    epochs=n_epochs, 
+                    steps_per_epoch=trains_steps,
+                    #validation_steps=validation_steps,
+                    validation_data=validation_generator,
+                    callbacks=[model_checkpoint],
+                    )
+t2_fit = time.time()
+print( 'Fit Time taken was {} seconds'.format( t2_fit - t1_fit))
+model.save_weights("/weights/final_epochM.h5")
+
+#%%
+# Accuracy
+
+
+plt.plot(fit_result.history["accuracy"])
+plt.plot(fit_result.history["val_accuracy"])
+plt.plot(fit_result.history["loss"])
+plt.plot(fit_result.history["val_loss"])
+plt.title("Model accuracy/Loss")
+plt.ylabel("Accuracy/Loss")
+plt.xlabel("Epoch")
+plt.legend(["Traina accuracy", "Test accuracy","Traina loss", "Test accuracy",], loc="upper left")
+plt.savefig('acc_loss_mobFull.png')
+"""
+**Predict**
+"""
+
+from sklearn.metrics import classification_report, confusion_matrix
+import numpy as np
+import seaborn as sns
+
+print("prediction_generator")
+prediction_generator = datagen.flow_from_directory(
+    VALIDATION_DIR, class_mode="sparse", target_size=IMAGE_SIZE, batch_size=1, shuffle=False,
+)
+print("predict")
+t1 = time.time()
+predict_result = model.predict(prediction_generator, prediction_generator.n)
+t2 = time.time()
+print( 'PredictTime taken was {} seconds'.format( t2 - t1))
+y_predicts = np.argmax(predict_result, axis=1)
+print("classes_labels")
+classes_labels = list(prediction_generator.class_indices.keys())
+print("classification_report")
+print(classification_report(prediction_generator.classes, y_predicts, target_names=classes_labels))
+
+sns.heatmap(confusion_matrix(prediction_generator.classes, y_predicts), xticklabels=classes_labels, yticklabels=classes_labels, annot=True,fmt='.5g')
+#plt.show()
+plt.savefig('confusion_matrix_mob_final.png')
